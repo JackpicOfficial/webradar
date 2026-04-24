@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WebRadar Plus — Network Intelligence</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/js-yaml/4.1.0/js-yaml.min.js"></script>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="30" height="30" viewBox="0 0 32 32" fill="none">
+        <circle cx="16" cy="16" r="14" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+        <circle cx="16" cy="16" r="9"  stroke="currentColor" stroke-width="1.5" opacity="0.5"/>
+        <circle cx="16" cy="16" r="4"  fill="currentColor"/>
+        <line x1="16" y1="2"  x2="16" y2="6"  stroke="currentColor" stroke-width="1.5"/>
+        <line x1="16" y1="26" x2="16" y2="30" stroke="currentColor" stroke-width="1.5"/>
+        <line x1="2"  y1="16" x2="6"  y2="16" stroke="currentColor" stroke-width="1.5"/>
+        <line x1="26" y1="16" x2="30" y2="16" stroke="currentColor" stroke-width="1.5"/>
+      </svg>
+    </div>
+    <div class="logo-text">
+      <h1>WebRadar Plus</h1>
+      <span class="version">v1.1.3</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="brand">Powered &amp; Built by <strong>JackpicOfficial</strong></span>
+    <div class="user-info" id="user-info" style="display:none">
+      <span class="user-badge" id="user-badge"></span>
+      <button class="btn btn-sm" onclick="doLogout()">Sign Out</button>
+    </div>
+    <button class="theme-btn" id="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+      <span id="theme-icon">☀</span>
+    </button>
+  </div>
+</header>
+
+<nav>
+  <button class="tab active" data-tab="whois" data-feature="whois">◎ WHOIS</button>
+  <button class="tab" data-tab="ip" data-feature="ip">⊕ IP Checker</button>
+  <button class="tab" data-tab="dns" data-feature="dns">⊗ DNS</button>
+  <button class="tab" data-tab="redirect" data-feature="redirect">⇢ Redirects</button>
+  <button class="tab" data-tab="textcalc" data-feature="textcalc">✎ Text Calc</button>
+  <button class="tab" data-tab="password" data-feature="password">⊙ Password</button>
+  <button class="tab" data-tab="caseconv" data-feature="caseconv">Aa Case Convert</button>
+  <button class="tab" data-tab="validator" data-feature="validator">⊞ Validator</button>
+  <button class="tab" data-tab="cfemail" data-feature="cfemail">✉ CF Email</button>
+  <button class="tab tab-admin" data-tab="admin" id="tab-admin" style="display:none">⚙ Admin</button>
+</nav>
+
+<main>
+
+  <!-- ── WHOIS ────────────────────────────────────── -->
+  <section id="whois" class="tool active">
+    <div class="tool-header">
+      <h2>WHOIS / Domain Lookup</h2>
+      <p>Enter one domain per line — retrieves registration dates, expiry, name servers and registrant details.</p>
+    </div>
+    <div class="input-area">
+      <textarea id="whois-input" placeholder="google.com&#10;github.com&#10;example.org" rows="4"></textarea>
+      <div class="input-controls">
+        <button class="btn" onclick="runWhois()">⌕ Lookup</button>
+        <span class="info-hint">Ctrl+Enter · Max 10 domains</span>
+      </div>
+    </div>
+    <div id="whois-results" class="results"></div>
+  </section>
+
+  <!-- ── IP Checker ────────────────────────────────── -->
+  <section id="ip" class="tool">
+    <div class="tool-header">
+      <h2>IP Checker</h2>
+      <p>Enter one IP per line — queries 7 free geolocation providers simultaneously.</p>
+    </div>
+    <div class="input-area">
+      <textarea id="ip-input" placeholder="8.8.8.8&#10;1.1.1.1&#10;208.67.222.222" rows="4"></textarea>
+      <div class="input-controls">
+        <button class="btn" onclick="runIpCheck()">⌕ Check IPs</button>
+        <span class="info-hint">Ctrl+Enter · Max 10 IPs</span>
+      </div>
+    </div>
+    <div id="ip-results" class="results"></div>
+  </section>
+
+  <!-- ── DNS ──────────────────────────────────────── -->
+  <section id="dns" class="tool">
+    <div class="tool-header">
+      <h2>DNS Checker</h2>
+      <p>Check DNS propagation across 8 global resolvers. Supports all major record types.</p>
+    </div>
+    <div class="input-area">
+      <textarea id="dns-input" placeholder="google.com&#10;github.com" rows="4"></textarea>
+      <div class="input-controls">
+        <select id="dns-type">
+          <option value="A">A — IPv4</option>
+          <option value="AAAA">AAAA — IPv6</option>
+          <option value="CNAME">CNAME</option>
+          <option value="NS">NS — Name Server</option>
+          <option value="MX">MX — Mail</option>
+          <option value="TXT">TXT</option>
+          <option value="SOA">SOA</option>
+          <option value="CAA">CAA</option>
+        </select>
+        <button class="btn" onclick="runDnsCheck()">⌕ Check DNS</button>
+        <span class="info-hint">Ctrl+Enter · Max 5 domains</span>
+      </div>
+    </div>
+    <div id="dns-results" class="results"></div>
+  </section>
+
+  <!-- ── Redirect Checker ──────────────────────────── -->
+  <section id="redirect" class="tool">
+    <div class="tool-header">
+      <h2>Redirect Checker</h2>
+      <p>Traces the full redirect chain — every hop, status code, and final destination.</p>
+    </div>
+    <div class="input-area">
+      <textarea id="redirect-input" placeholder="https://bit.ly/example&#10;http://t.co/something" rows="4"></textarea>
+      <div class="input-controls">
+        <button class="btn" onclick="runRedirectCheck()">⇢ Trace</button>
+        <span class="info-hint">Ctrl+Enter · Max 10 URLs</span>
+      </div>
+    </div>
+    <div id="redirect-results" class="results"></div>
+  </section>
+
+  <!-- ── Text Calculator ───────────────────────────── -->
+  <section id="textcalc" class="tool">
+    <div class="tool-header">
+      <h2>Text Calculator</h2>
+      <p>Instant character, word, sentence and reading-time statistics — updates live as you type.</p>
+    </div>
+    <div class="tc-layout">
+      <div class="tc-input-col">
+        <textarea id="tc-input" class="tc-textarea" placeholder="Paste or type your text here…"></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="btn btn-sm" onclick="document.getElementById('tc-input').value='';updateTextStats()">Clear</button>
+          <span class="info-hint" style="align-self:center">Stats update in real-time</span>
+        </div>
+      </div>
+      <div class="tc-stats-col" id="tc-stats">
+        <div class="tc-placeholder">Start typing to see statistics…</div>
+      </div>
+    </div>
+    <div id="tc-keywords" class="tc-keywords-section"></div>
+  </section>
+
+  <!-- ── Password Generator ───────────────────────── -->
+  <section id="password" class="tool">
+    <div class="tool-header">
+      <h2>Password Generator</h2>
+      <p>Cryptographically random passwords or memorable passphrases — generated client-side only.</p>
+    </div>
+    <div class="password-generator">
+      <div class="password-type-toggle">
+        <button class="type-btn active" data-type="password" onclick="setPasswordType('password')">🔐 Password</button>
+        <button class="type-btn" data-type="passphrase" onclick="setPasswordType('passphrase')">💬 Passphrase</button>
+      </div>
+
+      <div class="length-control">
+        <label id="length-label" for="password-length">Length</label>
+        <input type="range" id="password-length" min="8" max="128" value="20" />
+        <span class="length-value" id="length-display">20</span>
+      </div>
+
+      <div class="options-grid" id="options-grid">
+        <label class="option-item"><input type="checkbox" id="opt-upper"   checked /><span class="option-label">Uppercase (A–Z)</span></label>
+        <label class="option-item"><input type="checkbox" id="opt-lower"   checked /><span class="option-label">Lowercase (a–z)</span></label>
+        <label class="option-item"><input type="checkbox" id="opt-numbers" checked /><span class="option-label">Numbers (0–9)</span></label>
+        <label class="option-item"><input type="checkbox" id="opt-special"         /><span class="option-label">Special (!@#$%^&amp;*)</span></label>
+        <label class="option-item"><input type="checkbox" id="opt-common"          /><span class="option-label">Common Symbols (!@#)</span></label>
+      </div>
+
+      <div class="pwd-actions">
+        <button class="btn" onclick="generatePasswords()">↻ Generate New</button>
+        <span class="info-hint">5 passwords · click any to copy</span>
+      </div>
+
+      <div id="generated-passwords" class="generated-passwords"></div>
+    </div>
+  </section>
+
+  <!-- ── CF Email Check ──────────────────────────────── -->
+  <section id="cfemail" class="tool">
+    <div class="tool-header">
+      <h2>CF Email Check</h2>
+      <p>Enter a domain to look up its name servers and find the mapped contact email. &nbsp;<a href="https://dash.cloudflare.com/login" target="_blank" rel="noopener" class="tool-link">↗ Cloudflare Dashboard</a></p>
+    </div>
+    <div class="input-area">
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="text" id="cfe-input" class="cfe-input" placeholder="anonymous.com" autocomplete="off" />
+        <button class="btn" onclick="runCFEmail()">⌕ Check</button>
+      </div>
+    </div>
+    <div id="cfe-results" class="results"></div>
+  </section>
+
+  <!-- ── Admin Panel ──────────────────────────────────── -->
+  <section id="admin" class="tool">
+    <div class="tool-header">
+      <h2>Admin Panel</h2>
+      <p>Manage users, roles and feature access.</p>
+    </div>
+    <div class="adm-tabs">
+      <button class="adm-tab active" data-adm="users" onclick="switchAdmTab('users',this)">👤 Users</button>
+      <button class="adm-tab" data-adm="roles" onclick="switchAdmTab('roles',this)">🏷 Roles</button>
+      <button class="adm-tab" data-adm="cfmappings" onclick="switchAdmTab('cfmappings',this)">✉ CF Mappings</button>
+      <button class="adm-tab" data-adm="account" onclick="switchAdmTab('account',this)">🔐 My Account</button>
+    </div>
+
+    <!-- Users -->
+    <div id="adm-users" class="adm-pane">
+      <div class="adm-toolbar">
+        <button class="btn" onclick="openCreateUser()">+ New User</button>
+      </div>
+      <div id="adm-users-list"></div>
+    </div>
+
+    <!-- Roles -->
+    <div id="adm-roles" class="adm-pane" style="display:none">
+      <div class="adm-toolbar">
+        <button class="btn" onclick="openCreateRole()">+ New Role</button>
+      </div>
+      <div id="adm-roles-list"></div>
+    </div>
+
+    <!-- CF Mappings -->
+    <div id="adm-cfmappings" class="adm-pane" style="display:none">
+      <div class="adm-toolbar">
+        <button class="btn" onclick="openCreateCFMapping()">+ New Mapping</button>
+      </div>
+      <div id="adm-cfmappings-list"></div>
+    </div>
+
+    <!-- My Account -->
+    <div id="adm-account" class="adm-pane" style="display:none">
+      <div class="adm-account-grid">
+        <div class="adm-card">
+          <h3>Change Password</h3>
+          <div class="field-row"><label>Current Password</label><input type="password" id="pwd-current" /></div>
+          <div class="field-row"><label>New Password</label><input type="password" id="pwd-new" /></div>
+          <div class="field-row"><label>Confirm New</label><input type="password" id="pwd-confirm" /></div>
+          <button class="btn" onclick="changePassword()">Update Password</button>
+          <div id="pwd-msg" class="adm-msg"></div>
+        </div>
+        <div class="adm-card">
+          <h3>Two-Factor Authentication</h3>
+          <div id="tfa-section">Loading…</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Syntax Validator ─────────────────────────────── -->
+  <section id="validator" class="tool">
+    <div class="tool-header">
+      <h2>Syntax Validator</h2>
+      <p>Paste any code or config — validates syntax and reports errors with line numbers.</p>
+    </div>
+    <div class="val-layout">
+      <div class="val-input-col">
+        <div class="val-toolbar">
+          <select id="val-format">
+            <option value="auto">⟳ Auto Detect</option>
+            <option value="json">JSON</option>
+            <option value="yaml">YAML</option>
+            <option value="javascript">JavaScript</option>
+            <option value="html">HTML</option>
+            <option value="xml">XML</option>
+            <option value="css">CSS</option>
+            <option value="python">Python</option>
+            <option value="dockerfile">Dockerfile</option>
+            <option value="env">ENV File</option>
+            <option value="k8s">Kubernetes YAML</option>
+            <option value="compose">Docker Compose</option>
+          </select>
+          <button class="btn" onclick="runValidate()">⊞ Validate</button>
+          <button class="btn btn-sm" onclick="document.getElementById('val-input').value='';document.getElementById('val-result').innerHTML='<div class=\'val-placeholder\'>Paste code and click Validate…</div>'">Clear</button>
+        </div>
+        <textarea id="val-input" class="val-textarea" placeholder="Paste your code or config here…"></textarea>
+      </div>
+      <div class="val-result-col" id="val-result">
+        <div class="val-placeholder">Paste code and click Validate…</div>
+      </div>
+    </div>
+  </section>
+
+
+
+  <!-- ── Case Converter ──────────────────────────────── -->
+  <section id="caseconv" class="tool">
+    <div class="tool-header">
+      <h2>Case Converter</h2>
+      <p>Paste your text and click any case style to instantly convert.</p>
+    </div>
+    <div class="cc-layout">
+      <textarea id="cc-input" class="cc-textarea" placeholder="Type or paste your text here…"></textarea>
+      <div class="cc-buttons">
+        <button class="cc-btn" onclick="convertCase('sentence')"><span class="cc-label">Sentence case</span><span class="cc-preview">The quick brown fox</span></button>
+        <button class="cc-btn" onclick="convertCase('lower')"><span class="cc-label">lower case</span><span class="cc-preview">the quick brown fox</span></button>
+        <button class="cc-btn" onclick="convertCase('upper')"><span class="cc-label">UPPER CASE</span><span class="cc-preview">THE QUICK BROWN FOX</span></button>
+        <button class="cc-btn" onclick="convertCase('capitalized')"><span class="cc-label">Capitalized Case</span><span class="cc-preview">The Quick Brown Fox</span></button>
+        <button class="cc-btn" onclick="convertCase('alternating')"><span class="cc-label">aLtErNaTiNg cAsE</span><span class="cc-preview">tHe QuIcK bRoWn FoX</span></button>
+        <button class="cc-btn" onclick="convertCase('title')"><span class="cc-label">Title Case</span><span class="cc-preview">The Quick Brown Fox</span></button>
+        <button class="cc-btn" onclick="convertCase('inverse')"><span class="cc-label">InVeRsE CaSe</span><span class="cc-preview">tHe QUICK BROWN fOX</span></button>
+      </div>
+    </div>
+    <div class="cc-output-wrap" id="cc-output-wrap" style="display:none">
+      <div class="cc-output-header">
+        <span id="cc-output-label">Result</span>
+        <button class="btn btn-sm" id="cc-copy-btn" onclick="copyCaseResult()">Copy</button>
+      </div>
+      <textarea id="cc-output" class="cc-textarea cc-output-textarea" readonly></textarea>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <strong>WebRadar Plus</strong> v1.1.3 &nbsp;·&nbsp;
+  Powered &amp; Built by <strong>JackpicOfficial</strong> &nbsp;·&nbsp;
+  <a href="https://github.com/JackpicOfficial" target="_blank" rel="noopener" class="footer-link">⭐ GitHub</a> &nbsp;·&nbsp;
+  <a href="https://hub.docker.com/r/21degree/webradar-plus" target="_blank" rel="noopener" class="footer-link">🐳 Docker Hub</a> &nbsp;·&nbsp;
+  <span class="footer-muted">All lookups are server-side · Password generated client-side only</span>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>

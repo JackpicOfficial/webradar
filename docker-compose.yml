@@ -1,0 +1,24 @@
+version: '3.9'
+
+services:
+  webradar:
+    image: 21degree/webradar-plus:latest
+    # To build locally instead (e.g. after code changes), comment the line above
+    # and uncomment the two lines below:
+    # build: .
+    # image: 21degree/webradar-plus:latest
+    container_name: webradar
+    ports:
+      - "8080:3000"
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
