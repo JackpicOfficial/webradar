@@ -140,10 +140,12 @@ The `docker-compose.yml` mounts this folder as a volume (`./data:/app/data`) so 
 | `PORT` | `3000` | Port the server listens on |
 | `NODE_ENV` | `production` | Node environment |
 | `SESSION_SECRET` | *(built-in fallback)* | Secret for signing session cookies — **set this in production** |
+| `ENCRYPTION_KEY` | *(falls back to SESSION_SECRET)* | Key for AES-256-GCM encryption of data files — **set this in production** |
 
-To set a custom session secret, create a `.env` file:
+To set secrets, create a `.env` file:
 ```env
 SESSION_SECRET=your-long-random-secret-here
+ENCRYPTION_KEY=another-long-random-secret-here
 ```
 
 ---

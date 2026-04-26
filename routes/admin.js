@@ -1,22 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcryptjs');
-const fs = require('fs');
-const path = require('path');
 const { requireAdmin } = require('../middleware/auth');
-
-const USERS_FILE    = path.join(__dirname, '..', 'data', 'users.json');
-const ROLES_FILE    = path.join(__dirname, '..', 'data', 'roles.json');
-const MAPPINGS_FILE = path.join(__dirname, '..', 'data', 'cf-mappings.json');
+const { readUsers, readRoles, readMappings, saveUsers, saveRoles, saveMappings } = require('../lib/data');
 
 const ALL_FEATURES = ['whois','ip','dns','redirect','textcalc','password','caseconv','validator','cfemail'];
-
-function readUsers() { try { return JSON.parse(fs.readFileSync(USERS_FILE, 'utf8')); } catch { return []; } }
-function saveUsers(u) { fs.writeFileSync(USERS_FILE, JSON.stringify(u, null, 2)); }
-function readRoles() { try { return JSON.parse(fs.readFileSync(ROLES_FILE, 'utf8')); } catch { return []; } }
-function saveRoles(r) { fs.writeFileSync(ROLES_FILE, JSON.stringify(r, null, 2)); }
-function readMappings() { try { return JSON.parse(fs.readFileSync(MAPPINGS_FILE, 'utf8')); } catch { return []; } }
-function saveMappings(m) { fs.writeFileSync(MAPPINGS_FILE, JSON.stringify(m, null, 2)); }
 
 function safeUser(u) {
   return { id: u.id, username: u.username, role: u.role, tfaEnabled: u.tfaEnabled, createdAt: u.createdAt };

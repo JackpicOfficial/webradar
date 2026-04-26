@@ -2,15 +2,9 @@ const express = require('express');
 const router  = express.Router();
 const https   = require('https');
 const axios   = require('axios');
-const fs      = require('fs');
-const path    = require('path');
+const { readMappings } = require('../lib/data');
 
-const MAPPINGS_FILE = path.join(__dirname, '..', 'data', 'cf-mappings.json');
 const agent = new https.Agent({ rejectUnauthorized: false });
-
-function readMappings() {
-  try { return JSON.parse(fs.readFileSync(MAPPINGS_FILE, 'utf8')); } catch { return []; }
-}
 
 function normalizeNS(ns) {
   return ns.toLowerCase().replace(/\.$/, '').trim();
