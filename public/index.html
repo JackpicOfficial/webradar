@@ -92,8 +92,31 @@
   <section id="dns" class="tool">
     <div class="tool-header">
       <h2>DNS Checker</h2>
-      <p>Check DNS propagation across 8 global resolvers. Supports all major record types.</p>
+      <p>Check DNS propagation across global resolvers. Supports all major record types.</p>
     </div>
+
+    <!-- Resolver Dashboard -->
+    <div id="dns-resolver-panel" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:13px;font-weight:600;color:var(--text)">Resolvers</span>
+          <button id="dns-refresh-btn" onclick="loadDnsResolvers()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer">↻ Refresh</button>
+          <span id="dns-resolver-summary" style="font-size:11px;color:var(--muted)"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;color:var(--muted)">
+            <input type="checkbox" id="dns-auto-select" checked onchange="onDnsAutoToggle()" style="accent-color:var(--accent);cursor:pointer" />
+            Auto-select online only
+          </label>
+          <button onclick="dnsSelectAll()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer">All</button>
+          <button onclick="dnsSelectNone()" style="background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:3px 9px;font-size:11px;cursor:pointer">None</button>
+        </div>
+      </div>
+      <div id="dns-resolver-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px">
+        <div style="color:var(--muted);font-size:12px;padding:6px">Checking resolvers…</div>
+      </div>
+    </div>
+
     <div class="input-area">
       <textarea id="dns-input" placeholder="google.com&#10;github.com" rows="4"></textarea>
       <div class="input-controls">

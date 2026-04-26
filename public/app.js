@@ -1,5 +1,8 @@
 'use strict';
 
+// ── DNS resolver state (declared early for tab-switch listener) ────────────
+let dnsResolverData = [];
+
 // ── Tab switching ──────────────────────────────────────────────────────────
 document.querySelectorAll('.tab').forEach(tab => {
   tab.addEventListener('click', () => {
@@ -8,6 +11,7 @@ document.querySelectorAll('.tab').forEach(tab => {
     tab.classList.add('active');
     document.getElementById(tab.dataset.tab).classList.add('active');
     if (tab.dataset.tab === 'admin') { switchAdmTab('users', document.querySelector('.adm-tab[data-adm="users"]')); }
+    if (tab.dataset.tab === 'dns' && dnsResolverData.length === 0) loadDnsResolvers();
   });
 });
 
@@ -228,6 +232,86 @@ function renderProvider(p) {
 }
 
 // ══════════════════════════════════════════════════════════════════════════
+// DNS Checker — Resolver Dashboard
+// ══════════════════════════════════════════════════════════════════════════
+
+async function loadDnsResolvers() {
+  const grid = document.getElementById('dns-resolver-grid');
+  const summary = document.getElementById('dns-resolver-summary');
+  const btn = document.getElementById('dns-refresh-btn');
+  grid.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:6px">Checking resolvers…</div>';
+  summary.textContent = '';
+  if (btn) btn.disabled = true;
+  try {
+    const r = await fetch('/api/dns/resolvers');
+    dnsResolverData = await r.json();
+    renderResolverGrid();
+    // Auto-select: check only online resolvers
+    if (document.getElementById('dns-auto-select').checked) applyAutoSelect();
+  } catch (e) {
+    grid.innerHTML = `<div style="color:var(--error);font-size:12px;padding:6px">Failed to load resolvers: ${esc(e.message)}</div>`;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function renderResolverGrid() {
+  const grid = document.getElementById('dns-resolver-grid');
+  const summary = document.getElementById('dns-resolver-summary');
+  const autoMode = document.getElementById('dns-auto-select').checked;
+  const onlineCount = dnsResolverData.filter(r => r.online).length;
+  summary.textContent = `${onlineCount} / ${dnsResolverData.length} online`;
+
+  grid.innerHTML = dnsResolverData.map(r => {
+    const checked = autoMode ? r.online : (r._checked !== false);
+    const statusColor = r.online ? 'var(--success)' : 'var(--error)';
+    const statusLabel = r.online ? 'Online' : 'Offline';
+    const title = r.online ? `${r.name} — Online` : `${r.name} — ${r.error || 'Offline'}`;
+    return `<label title="${esc(title)}" style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;cursor:pointer;font-size:12px;user-select:none;${autoMode && !r.online ? 'opacity:0.55;' : ''}">
+      <input type="checkbox" class="dns-resolver-cb" data-id="${r.id}" ${checked ? 'checked' : ''} ${autoMode ? 'disabled' : ''} style="accent-color:var(--accent);cursor:pointer;flex-shrink:0" />
+      <span style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${r.flag} ${esc(r.name)}</span>
+      <span style="font-size:10px;font-weight:600;color:${statusColor};white-space:nowrap">● ${statusLabel}</span>
+    </label>`;
+  }).join('');
+}
+
+function onDnsAutoToggle() {
+  if (document.getElementById('dns-auto-select').checked) {
+    applyAutoSelect();
+  }
+  renderResolverGrid();
+}
+
+function applyAutoSelect() {
+  dnsResolverData.forEach(r => { r._checked = r.online; });
+}
+
+function dnsSelectAll() {
+  document.getElementById('dns-auto-select').checked = false;
+  dnsResolverData.forEach(r => { r._checked = true; });
+  renderResolverGrid();
+}
+
+function dnsSelectNone() {
+  document.getElementById('dns-auto-select').checked = false;
+  dnsResolverData.forEach(r => { r._checked = false; });
+  renderResolverGrid();
+}
+
+function getSelectedResolverIds() {
+  const autoMode = document.getElementById('dns-auto-select')?.checked;
+  if (autoMode) {
+    const ids = dnsResolverData.filter(r => r.online).map(r => r.id);
+    return ids.length > 0 ? ids : null; // null = all
+  }
+  const checked = [...document.querySelectorAll('.dns-resolver-cb:checked')].map(cb => cb.dataset.id);
+  return checked.length > 0 ? checked : null;
+}
+
+// Load resolver health if DNS tab is active on page load
+if (document.getElementById('dns')?.classList.contains('active')) loadDnsResolvers();
+
+// ══════════════════════════════════════════════════════════════════════════
 // DNS Checker
 // ══════════════════════════════════════════════════════════════════════════
 async function runDnsCheck() {
@@ -236,9 +320,15 @@ async function runDnsCheck() {
   const el = document.getElementById('dns-results');
   showLoading(el);
   try {
+    const resolverIds = getSelectedResolverIds();
+    const body = {
+      domains: val.split('\n').map(s => s.trim()).filter(Boolean),
+      recordType: document.getElementById('dns-type').value,
+    };
+    if (resolverIds) body.resolverIds = resolverIds;
     const r = await fetch('/api/dns', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ domains: val.split('\n').map(s => s.trim()).filter(Boolean), recordType: document.getElementById('dns-type').value }),
+      body: JSON.stringify(body),
     });
     renderDns(await r.json(), el);
   } catch (err) { el.innerHTML = `<div class="empty-state">${esc(err.message)}</div>`; }
@@ -262,14 +352,27 @@ function renderDns(results, el) {
         <div class="result-body">
           <div class="dns-wrap">
             <table class="dns-table">
-              <thead><tr><th>Resolver</th><th>Location</th><th>Status</th><th>Answer</th><th>TTL</th></tr></thead>
+              <thead><tr><th>Resolver</th><th>Location</th><th>Status</th><th>Answer / Error</th><th>TTL</th></tr></thead>
               <tbody>${res.resolvers.map(r => {
                 const has = r.status === 'success' && r.answers?.length;
+                const noRecord = r.status === 'success' && !r.answers?.length;
+                let statusCell, answerCell;
+                if (has) {
+                  statusCell = '<span class="check">✓ OK</span>';
+                  answerCell = `<div class="dns-answers">${r.answers.map(a => `<span class="dns-answer">${esc(a.data)}</span>`).join('')}</div>`;
+                } else if (noRecord) {
+                  statusCell = `<span style="color:var(--muted);font-size:11px">${esc(r.rcode || 'NOERROR')}</span>`;
+                  answerCell = `<span style="color:var(--muted);font-size:11px">No record found</span>`;
+                } else {
+                  const httpBadge = r.httpStatus ? `<span style="background:color-mix(in srgb,var(--error) 15%,var(--card));color:var(--error);border-radius:4px;padding:1px 5px;font-size:10px;font-weight:600;margin-right:4px">HTTP ${r.httpStatus}</span>` : '';
+                  statusCell = '<span class="cross">✗ Error</span>';
+                  answerCell = `${httpBadge}<span style="color:var(--muted);font-size:11px" title="${esc(r.error || '')}">${esc(r.error || 'Unknown error')}</span>`;
+                }
                 return `<tr>
                   <td style="font-weight:600">${esc(r.resolver)}</td>
                   <td style="white-space:nowrap">${r.flag || ''} ${esc(r.country || '')}</td>
-                  <td>${has ? '<span class="check">✓</span>' : '<span class="cross">✗</span>'}</td>
-                  <td>${has ? `<div class="dns-answers">${r.answers.map(a => `<span class="dns-answer">${esc(a.data)}</span>`).join('')}</div>` : `<span style="color:var(--muted);font-size:11px">${esc(r.error || r.rcode || 'No record')}</span>`}</td>
+                  <td>${statusCell}</td>
+                  <td>${answerCell}</td>
                   <td style="color:var(--muted)">${has ? r.answers[0]?.ttl ?? '—' : '—'}</td>
                 </tr>`;
               }).join('')}</tbody>
